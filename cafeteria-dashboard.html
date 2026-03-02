@@ -72,16 +72,8 @@
             border-bottom: 2px solid var(--orange);
         }
 
-        #logo { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; line-height: 1; }
-        #logo-text {
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 48px; font-weight: 700;
-            color: #ffffff;
-            letter-spacing: 3px;
-            margin-right: -3px;
-            text-transform: uppercase;
-        }
-        #logo-sub { font-family: 'Rajdhani', sans-serif; font-size: 17px; font-weight: 600; color: #ffffff; letter-spacing: 9px; margin-right: -9px; text-transform: uppercase; margin-top: 2px; }
+        #logo { display: flex; align-items: center; justify-content: center; }
+        #logo img { height: 62px; width: auto; }
 
         #live-badge {
             display: flex; align-items: center; gap: 9px;
@@ -270,8 +262,7 @@
 <!-- ═══ EN-TÊTE ═══ -->
 <div id="header">
     <div id="logo">
-        <div id="logo-text">ISART</div>
-        <div id="logo-sub">DIGITAL</div>
+        <img src="isart-logo.svg" alt="ISART Digital">
     </div>
     <div id="live-badge">
         <div id="live-dot"></div>
@@ -346,15 +337,15 @@ const CFG = {
     weatherRefreshMs: 10 * 60000,
     newsRefreshMs: 15 * 60000,
 
-    // Reddit — Actualités jeux vidéo (API directe, sans proxy CORS)
-    gamingSubreddits: ['games', 'pcgaming', 'gaming'],
+    // Reddit — Actualités jeux vidéo FR
+    gamingSubreddits: ['FranceJV', 'jeux'],
 
     // Reddit — Studios & industrie
-    studioSubreddits: ['gamedev', 'gameIndustryNews', 'indiegaming'],
+    studioSubreddits: ['gamedev', 'indiegaming'],
 
-    // Flux RSS de secours (si Reddit bloqué)
-    gamingFeeds: ['https://kotaku.com/rss', 'https://www.polygon.com/rss/index.xml'],
-    studioFeeds: ['https://www.eurogamer.net/?format=rss', 'https://www.rockpapershotgun.com/feed'],
+    // Flux RSS français (sources primaires)
+    gamingFeeds: ['https://www.jeuxvideo.com/rss/rss.xml', 'https://www.gamekult.com/feeds/news.xml'],
+    studioFeeds: ['https://www.lemonde.fr/jeux-video/rss_full.xml', 'https://www.numerama.com/feed/'],
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -410,7 +401,7 @@ async function loadWeather() {
             + `?latitude=${CFG.lat}&longitude=${CFG.lon}`
             + `&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,visibility`
             + `&daily=weather_code,temperature_2m_max,temperature_2m_min`
-            + `&timezone=America%2FToronto&forecast_days=3&wind_speed_unit=kmh`;
+            + `&timezone=America%2FToronto&forecast_days=7&wind_speed_unit=kmh`;
         const r = await fetch(url, { signal: sig(15000) });
         if (!r.ok) throw new Error(r.status);
         const d = await r.json();
@@ -461,7 +452,7 @@ function renderWeather(d) {
             <div class="w-detail"><div class="w-detail-lbl">🌡️ Ressenti</div><div class="w-detail-val">${feels}°C</div></div>
         </div>
         <div id="w-forecast">
-            <div id="w-forecast-title">Prévisions 3 jours</div>
+            <div id="w-forecast-title">Prévisions 7 jours</div>
             ${forecasts}
         </div>`;
 }
@@ -741,19 +732,15 @@ let timerG = null;
 let timerS = null;
 
 async function loadAll() {
-    // Priorité 1 : The Guardian API (CORS natif, fonctionne en réseau filtré)
+    // Priorité 1 : RSS français (jeuxvideo.com, Gamekult, Le Monde…)
     let [gaming, studio] = await Promise.all([
-        fetchGuardian('video games OR gaming OR esports OR Nintendo OR PlayStation OR Xbox'),
-        fetchGuardian('game studio OR game developer OR indie game OR Ubisoft OR EA OR game industry'),
+        fetchFeeds(CFG.gamingFeeds).catch(() => []),
+        fetchFeeds(CFG.studioFeeds).catch(() => []),
     ]);
 
-    // Priorité 2 : Reddit si Guardian échoue
+    // Priorité 2 : Reddit francophone si RSS indisponible
     if (!gaming.length) gaming = await fetchRedditMultiple(CFG.gamingSubreddits);
     if (!studio.length) studio = await fetchRedditMultiple(CFG.studioSubreddits);
-
-    // Priorité 3 : RSS fallback
-    if (!gaming.length) gaming = await fetchFeeds(CFG.gamingFeeds).catch(() => []);
-    if (!studio.length) studio = await fetchFeeds(CFG.studioFeeds).catch(() => []);
 
     if (timerG) clearInterval(timerG);
     if (timerS) clearInterval(timerS);
