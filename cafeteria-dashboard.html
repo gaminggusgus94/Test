@@ -73,7 +73,7 @@
         }
 
         #logo { display: flex; align-items: center; gap: 18px; }
-        #logo-emoji { font-size: 42px; }
+        #logo-icon { display: flex; align-items: center; }
         #logo-text {
             font-family: 'Rajdhani', sans-serif;
             font-size: 32px; font-weight: 700;
@@ -271,7 +271,11 @@
 <!-- ═══ EN-TÊTE ═══ -->
 <div id="header">
     <div id="logo">
-        <div id="logo-emoji">🎮</div>
+        <div id="logo-icon">
+            <svg width="48" height="46" viewBox="0 0 110 105" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="55,2 108,103 80,103 55,50 30,103 2,103" fill="white"/>
+            </svg>
+        </div>
         <div>
             <div id="logo-text">SALLE <span id="logo-accent">STAFF</span></div>
             <div id="logo-sub">Actualités Jeux Vidéo · En Direct</div>
