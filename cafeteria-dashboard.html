@@ -782,36 +782,8 @@ async function loadAll() {
     updateTicker(gaming, studio);
 }
 
-// ══════════════════════════════════════════════════════════════
-//  DIAGNOSTIC RÉSEAU (temporaire — affiché en console + badge)
-// ══════════════════════════════════════════════════════════════
-async function netDiag() {
-    const tests = [
-        { name: 'Open-Meteo', url: `https://api.open-meteo.com/v1/forecast?latitude=${CFG.lat}&longitude=${CFG.lon}&current=temperature_2m&timezone=UTC` },
-        { name: 'Guardian',   url: 'https://content.guardianapis.com/search?q=games&page-size=1&api-key=test' },
-        { name: 'Reddit',     url: 'https://www.reddit.com/r/games/hot.json?limit=1&raw_json=1' },
-    ];
-    const results = [];
-    for (const t of tests) {
-        try {
-            const r = await fetch(t.url, { signal: sig(8000) });
-            results.push(`${t.name}: ${r.ok ? '✅' : '❌ HTTP ' + r.status}`);
-        } catch (e) {
-            results.push(`${t.name}: ❌ ${e.message || 'bloqué'}`);
-        }
-    }
-    console.log('[DIAG]', results.join(' | '));
-    // Badge visible sur l'écran
-    const badge = document.createElement('div');
-    badge.style.cssText = 'position:fixed;bottom:76px;right:12px;z-index:9998;background:rgba(0,0,0,.85);color:#aaa;font-size:11px;padding:6px 10px;border-radius:6px;font-family:monospace;max-width:480px;word-break:break-all';
-    badge.textContent = results.join(' | ');
-    document.body.appendChild(badge);
-    setTimeout(() => badge.remove(), 20000);
-}
-
 loadWeather();
 loadAll();
-netDiag();
 
 setInterval(loadWeather, CFG.weatherRefreshMs);
 setInterval(loadAll, CFG.newsRefreshMs);
