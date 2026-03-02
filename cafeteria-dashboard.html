@@ -383,6 +383,9 @@ const W_ICON = {
 const DAYS_FR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 const MONTHS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 
+// AbortSignal.timeout n'existe pas sur iOS < 16 — polyfill silencieux
+const sig = ms => { try { return AbortSignal.timeout(ms); } catch { return undefined; } };
+
 // ══════════════════════════════════════════════════════════════
 //  HORLOGE
 // ══════════════════════════════════════════════════════════════
@@ -497,7 +500,7 @@ async function fetchFeed(url) {
     try {
         const r = await fetch(
             `https://api.rss2json.com/v1/api.json?count=25&rss_url=${encodeURIComponent(url)}`,
-            { signal: AbortSignal.timeout(12000) }
+            { signal: sig(12000) }
         );
         const d = await r.json();
         if (d.status === 'ok' && d.items?.length) return d.items;
@@ -507,7 +510,7 @@ async function fetchFeed(url) {
     try {
         const r2 = await fetch(
             `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-            { signal: AbortSignal.timeout(12000) }
+            { signal: sig(12000) }
         );
         const d2 = await r2.json();
         const items2 = parseRSSXML(d2.contents ?? '');
@@ -518,7 +521,7 @@ async function fetchFeed(url) {
     try {
         const r3 = await fetch(
             `https://corsproxy.io/?${encodeURIComponent(url)}`,
-            { signal: AbortSignal.timeout(12000) }
+            { signal: sig(12000) }
         );
         const xml = await r3.text();
         return parseRSSXML(xml);
