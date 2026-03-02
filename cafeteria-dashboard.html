@@ -485,6 +485,30 @@ function renderWeather(d) {
 }
 
 // ══════════════════════════════════════════════════════════════
+//  THE GUARDIAN API  (CORS natif, clé "test" publique, sans proxy)
+// ══════════════════════════════════════════════════════════════
+async function fetchGuardian(query, pageSize) {
+    try {
+        const url = 'https://content.guardianapis.com/search'
+            + '?q=' + encodeURIComponent(query)
+            + '&show-fields=thumbnail,trailText'
+            + '&page-size=' + (pageSize || 20)
+            + '&order-by=newest'
+            + '&api-key=test';
+        const r = await fetch(url, { signal: sig(15000) });
+        if (!r.ok) throw new Error(r.status);
+        const d = await r.json();
+        return (d.response.results || []).map(a => ({
+            title: a.webTitle,
+            pubDate: a.webPublicationDate,
+            thumbnail: (a.fields && a.fields.thumbnail) || null,
+            content: (a.fields && a.fields.trailText) || '',
+            author: 'The Guardian',
+        }));
+    } catch { return []; }
+}
+
+// ══════════════════════════════════════════════════════════════
 //  REDDIT JSON API  (CORS natif, sans proxy, sans clé)
 // ══════════════════════════════════════════════════════════════
 async function fetchReddit(subreddit) {
@@ -735,13 +759,17 @@ let timerG = null;
 let timerS = null;
 
 async function loadAll() {
-    // Priorité : Reddit JSON (CORS natif, pas de proxy)
+    // Priorité 1 : The Guardian API (CORS natif, fonctionne en réseau filtré)
     let [gaming, studio] = await Promise.all([
-        fetchRedditMultiple(CFG.gamingSubreddits),
-        fetchRedditMultiple(CFG.studioSubreddits),
+        fetchGuardian('video games OR gaming OR esports OR Nintendo OR PlayStation OR Xbox'),
+        fetchGuardian('game studio OR game developer OR indie game OR Ubisoft OR EA OR game industry'),
     ]);
 
-    // Fallback RSS si Reddit bloqué par le réseau
+    // Priorité 2 : Reddit si Guardian échoue
+    if (!gaming.length) gaming = await fetchRedditMultiple(CFG.gamingSubreddits);
+    if (!studio.length) studio = await fetchRedditMultiple(CFG.studioSubreddits);
+
+    // Priorité 3 : RSS fallback
     if (!gaming.length) gaming = await fetchFeeds(CFG.gamingFeeds).catch(() => []);
     if (!studio.length) studio = await fetchFeeds(CFG.studioFeeds).catch(() => []);
 
@@ -760,8 +788,8 @@ async function loadAll() {
 async function netDiag() {
     const tests = [
         { name: 'Open-Meteo', url: `https://api.open-meteo.com/v1/forecast?latitude=${CFG.lat}&longitude=${CFG.lon}&current=temperature_2m&timezone=UTC` },
+        { name: 'Guardian',   url: 'https://content.guardianapis.com/search?q=games&page-size=1&api-key=test' },
         { name: 'Reddit',     url: 'https://www.reddit.com/r/games/hot.json?limit=1&raw_json=1' },
-        { name: 'rss2json',   url: 'https://api.rss2json.com/v1/api.json?count=1&rss_url=https%3A%2F%2Fkotaku.com%2Frss' },
     ];
     const results = [];
     for (const t of tests) {
@@ -778,7 +806,7 @@ async function netDiag() {
     badge.style.cssText = 'position:fixed;bottom:76px;right:12px;z-index:9998;background:rgba(0,0,0,.85);color:#aaa;font-size:11px;padding:6px 10px;border-radius:6px;font-family:monospace;max-width:480px;word-break:break-all';
     badge.textContent = results.join(' | ');
     document.body.appendChild(badge);
-    setTimeout(() => badge.remove(), 30000);
+    setTimeout(() => badge.remove(), 20000);
 }
 
 loadWeather();
