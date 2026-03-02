@@ -347,41 +347,46 @@
 //  ⚙️  CONFIGURATION
 // ══════════════════════════════════════════════════════════════
 const CFG = {
-    city: 'Montreal',
+    // Coordonnées Montréal pour Open-Meteo
+    lat: 45.5017, lon: -73.5673,
     cardsPerView: 3,
     rotationMs: 9000,
     weatherRefreshMs: 10 * 60000,
     newsRefreshMs: 15 * 60000,
 
-    // Flux RSS — Actualités jeux vidéo
-    gamingFeeds: [
-        'https://kotaku.com/rss',                             // Kotaku
-        'https://www.polygon.com/rss/index.xml',              // Polygon
-        'https://www.pcgamer.com/rss/',                       // PC Gamer
-    ],
+    // Reddit — Actualités jeux vidéo (API directe, sans proxy CORS)
+    gamingSubreddits: ['games', 'pcgaming', 'gaming'],
 
-    // Flux RSS — Studios & industrie du jeu vidéo
-    studioFeeds: [
-        'https://www.eurogamer.net/?format=rss',              // Eurogamer
-        'https://www.rockpapershotgun.com/feed',              // Rock Paper Shotgun
-        'https://www.destructoid.com/feed/',                  // Destructoid
-    ],
+    // Reddit — Studios & industrie
+    studioSubreddits: ['gamedev', 'gameIndustryNews', 'indiegaming'],
+
+    // Flux RSS de secours (si Reddit bloqué)
+    gamingFeeds: ['https://kotaku.com/rss', 'https://www.polygon.com/rss/index.xml'],
+    studioFeeds: ['https://www.eurogamer.net/?format=rss', 'https://www.rockpapershotgun.com/feed'],
 };
 
 // ══════════════════════════════════════════════════════════════
-//  CODES MÉTÉO → EMOJI  (wttr.in)
+//  CODES WMO → EMOJI + DESCRIPTION FR  (Open-Meteo)
 // ══════════════════════════════════════════════════════════════
-const W_ICON = {
-    113:'☀️',116:'⛅',119:'☁️',122:'☁️',143:'🌫️',
-    176:'🌦️',179:'🌨️',182:'🌧️',185:'🌧️',200:'⛈️',
-    227:'🌨️',230:'❄️',248:'🌫️',260:'🌫️',263:'🌦️',
-    266:'🌦️',281:'🌧️',284:'🌧️',293:'🌦️',296:'🌧️',
-    299:'🌧️',302:'🌧️',305:'🌧️',308:'🌧️',311:'🌧️',
-    314:'🌧️',317:'🌧️',320:'🌨️',323:'🌨️',326:'🌨️',
-    329:'🌨️',332:'❄️',335:'❄️',338:'❄️',350:'🌧️',
-    353:'🌦️',356:'🌧️',359:'🌧️',362:'🌨️',365:'🌨️',
-    368:'🌨️',371:'❄️',374:'🌧️',377:'🌧️',386:'⛈️',
-    389:'⛈️',392:'⛈️',395:'⛈️',
+const WMO_ICON = {
+    0:'☀️',1:'☀️',2:'⛅',3:'☁️',
+    45:'🌫️',48:'🌫️',
+    51:'🌦️',53:'🌦️',55:'🌧️',56:'🌧️',57:'🌧️',
+    61:'🌦️',63:'🌧️',65:'🌧️',66:'🌧️',67:'🌧️',
+    71:'🌨️',73:'🌨️',75:'❄️',77:'❄️',
+    80:'🌦️',81:'🌧️',82:'🌧️',
+    85:'🌨️',86:'❄️',
+    95:'⛈️',96:'⛈️',99:'⛈️',
+};
+const WMO_DESC = {
+    0:'Ciel dégagé',1:'Principalement dégagé',2:'Partiellement nuageux',3:'Couvert',
+    45:'Brouillard',48:'Brouillard givrant',
+    51:'Bruine légère',53:'Bruine modérée',55:'Bruine dense',
+    61:'Pluie légère',63:'Pluie modérée',65:'Pluie forte',
+    71:'Neige légère',73:'Neige modérée',75:'Neige forte',77:'Grains de neige',
+    80:'Averses légères',81:'Averses modérées',82:'Averses violentes',
+    85:'Averses de neige',86:'Averses de neige fortes',
+    95:'Orage',96:'Orage avec grêle',99:'Orage violent',
 };
 
 const DAYS_FR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
@@ -405,11 +410,16 @@ setInterval(tickClock, 1000);
 tickClock();
 
 // ══════════════════════════════════════════════════════════════
-//  MÉTÉO  (wttr.in JSON API — gratuit, sans clé)
+//  MÉTÉO  (Open-Meteo — gratuit, CORS natif, sans clé)
 // ══════════════════════════════════════════════════════════════
 async function loadWeather() {
     try {
-        const r = await fetch(`https://wttr.in/${encodeURIComponent(CFG.city)}?format=j1`);
+        const url = `https://api.open-meteo.com/v1/forecast`
+            + `?latitude=${CFG.lat}&longitude=${CFG.lon}`
+            + `&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,visibility`
+            + `&daily=weather_code,temperature_2m_max,temperature_2m_min`
+            + `&timezone=America%2FToronto&forecast_days=3&wind_speed_unit=kmh`;
+        const r = await fetch(url, { signal: sig(15000) });
         if (!r.ok) throw new Error(r.status);
         const d = await r.json();
         renderWeather(d);
@@ -420,25 +430,25 @@ async function loadWeather() {
 }
 
 function renderWeather(d) {
-    const cur = d.current_condition[0];
-    const code = +cur.weatherCode;
-    const icon  = W_ICON[code] || '🌡️';
-    const temp  = cur.temp_C;
-    const feels = cur.FeelsLikeC;
-    const desc  = (cur.lang_fr?.[0]?.value) || cur.weatherDesc[0].value;
-    const hum   = cur.humidity;
-    const wind  = cur.windspeedKmph;
-    const vis   = cur.visibility;
+    const cur   = d.current;
+    const code  = cur.weather_code;
+    const icon  = WMO_ICON[code] || '🌡️';
+    const temp  = Math.round(cur.temperature_2m);
+    const feels = Math.round(cur.apparent_temperature);
+    const desc  = WMO_DESC[code] || 'Conditions météo';
+    const hum   = cur.relative_humidity_2m;
+    const wind  = Math.round(cur.wind_speed_10m);
+    const vis   = (cur.visibility / 1000).toFixed(1);
 
-    const forecasts = d.weather.slice(0, 3).map((day, i) => {
-        let name = i === 0 ? "Aujourd'hui" : i === 1 ? 'Demain' : DAYS_FR[new Date(day.date).getDay()];
-        const ico = W_ICON[+(day.hourly[4]?.weatherCode ?? 113)] || '🌡️';
+    const forecasts = d.daily.time.map((date, i) => {
+        let name = i === 0 ? "Aujourd'hui" : i === 1 ? 'Demain' : DAYS_FR[new Date(date + 'T12:00').getDay()];
+        const ico = WMO_ICON[d.daily.weather_code[i]] || '🌡️';
         return `<div class="fc-day">
             <span class="fc-name">${name}</span>
             <span class="fc-icon">${ico}</span>
             <div class="fc-temps">
-                <div class="fc-max">${day.maxtempC}°</div>
-                <div class="fc-min">${day.mintempC}°</div>
+                <div class="fc-max">${Math.round(d.daily.temperature_2m_max[i])}°</div>
+                <div class="fc-min">${Math.round(d.daily.temperature_2m_min[i])}°</div>
             </div>
         </div>`;
     }).join('');
@@ -465,7 +475,48 @@ function renderWeather(d) {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  RSS → JSON  (double fallback)
+//  REDDIT JSON API  (CORS natif, sans proxy, sans clé)
+// ══════════════════════════════════════════════════════════════
+async function fetchReddit(subreddit) {
+    try {
+        const r = await fetch(
+            `https://www.reddit.com/r/${subreddit}/hot.json?limit=25&raw_json=1`,
+            { signal: sig(15000) }
+        );
+        if (!r.ok) throw new Error(r.status);
+        const d = await r.json();
+        return d.data.children
+            .map(c => c.data)
+            .filter(p => !p.stickied && !p.over_18)
+            .map(p => {
+                let thumb = null;
+                if (p.preview && p.preview.images && p.preview.images[0]) {
+                    thumb = p.preview.images[0].source.url;
+                } else if (p.thumbnail && p.thumbnail.startsWith('http')) {
+                    thumb = p.thumbnail;
+                }
+                return {
+                    title: p.title,
+                    pubDate: new Date(p.created_utc * 1000).toISOString(),
+                    thumbnail: thumb,
+                    content: p.selftext || '',
+                    author: 'r/' + p.subreddit,
+                };
+            });
+    } catch { return []; }
+}
+
+async function fetchRedditMultiple(subreddits) {
+    const results = await Promise.all(subreddits.map(fetchReddit));
+    const items = results.flat();
+    const seen = new Set();
+    return items
+        .filter(it => { const k = it.title.trim().toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
+        .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RSS → JSON  (fallback si Reddit bloqué)
 // ══════════════════════════════════════════════════════════════
 
 function parseRSSXML(xmlStr) {
@@ -674,10 +725,15 @@ let timerG = null;
 let timerS = null;
 
 async function loadAll() {
-    const [gaming, studio] = await Promise.all([
-        fetchFeeds(CFG.gamingFeeds).catch(() => []),
-        fetchFeeds(CFG.studioFeeds).catch(() => []),
+    // Priorité : Reddit JSON (CORS natif, pas de proxy)
+    let [gaming, studio] = await Promise.all([
+        fetchRedditMultiple(CFG.gamingSubreddits),
+        fetchRedditMultiple(CFG.studioSubreddits),
     ]);
+
+    // Fallback RSS si Reddit bloqué par le réseau
+    if (!gaming.length) gaming = await fetchFeeds(CFG.gamingFeeds).catch(() => []);
+    if (!studio.length) studio = await fetchFeeds(CFG.studioFeeds).catch(() => []);
 
     if (timerG) clearInterval(timerG);
     if (timerS) clearInterval(timerS);
