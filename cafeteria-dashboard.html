@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Dashboard Cafétéria</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --header-h: 88px;
+            --ticker-h: 70px;
+            --weather-w: 410px;
+            --gap: 20px;
+            --pad: 28px;
+            --bg: #07071a;
+            --bg-card: rgba(255,255,255,0.045);
+            --border: rgba(255,255,255,0.07);
+            --text: #f0f4ff;
+            --text-dim: rgba(240,244,255,0.55);
+            --gaming: #8b5cf6;
+            --gaming-lite: #c4b5fd;
+            --cinema: #f59e0b;
+            --cinema-lite: #fde68a;
+            --sky: #38bdf8;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* subtle CRT scan-line overlay */
+        body::after {
+            content: '';
+            position: fixed; inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px);
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* ambient glow */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse at 8% 60%, rgba(139,92,246,.10) 0%, transparent 45%),
+                radial-gradient(ellipse at 92% 60%, rgba(245,158,11,.07) 0%, transparent 45%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ─── HEADER ─── */
+        #header {
+            position: relative; z-index: 10;
+            height: var(--header-h);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            background: rgba(255,255,255,0.025);
+            border-bottom: 1px solid var(--border);
+        }
+
+        #logo { display: flex; align-items: center; gap: 18px; }
+        #logo-emoji { font-size: 42px; }
+        #logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 26px; font-weight: 900;
+            background: linear-gradient(90deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            letter-spacing: 3px;
+        }
+        #logo-sub { font-size: 12px; color: var(--text-dim); letter-spacing: 4px; text-transform: uppercase; margin-top: 3px; }
+
+        #live-badge {
+            display: flex; align-items: center; gap: 9px;
+            background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.25);
+            border-radius: 20px; padding: 6px 18px;
+            font-size: 13px; font-weight: 700; color: #4ade80; letter-spacing: 2px;
+        }
+        #live-dot { width: 9px; height: 9px; background: #22c55e; border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.75)} }
+
+        #datetime { text-align: right; }
+        #clock {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 54px; font-weight: 900; line-height: 1;
+            color: #fff; letter-spacing: 3px;
+        }
+        #date { font-size: 15px; color: var(--text-dim); margin-top: 5px; text-transform: capitalize; letter-spacing: 1px; }
+
+        /* ─── MAIN ─── */
+        #main {
+            position: relative; z-index: 1;
+            display: flex;
+            height: calc(1080px - var(--header-h) - var(--ticker-h));
+        }
+
+        /* ─── WEATHER PANEL ─── */
+        #weather-panel {
+            width: var(--weather-w);
+            flex-shrink: 0;
+            background: linear-gradient(175deg, #0c1456 0%, #07091f 60%, #050510 100%);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 28px 26px;
+            overflow: hidden;
+            position: relative;
+        }
+        #weather-panel::before {
+            content: '';
+            position: absolute; top: -80px; right: -80px;
+            width: 260px; height: 260px;
+            background: radial-gradient(circle, rgba(56,189,248,.18) 0%, transparent 70%);
+            border-radius: 50%; pointer-events: none;
+        }
+
+        #w-city { font-size: 13px; color: var(--sky); text-transform: uppercase; letter-spacing: 4px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+        #w-main { margin-top: 20px; display: flex; align-items: flex-start; gap: 12px; }
+        #w-icon { font-size: 80px; line-height: 1; filter: drop-shadow(0 0 18px rgba(56,189,248,.45)); }
+        #w-temp { font-family: 'Orbitron', sans-serif; font-size: 88px; font-weight: 900; line-height: 1; color: #fff; }
+        #w-unit { font-size: 34px; color: var(--text-dim); }
+
+        #w-desc { font-size: 19px; color: var(--sky); font-weight: 600; margin-top: 10px; }
+        #w-feels { font-size: 14px; color: var(--text-dim); margin-top: 4px; }
+
+        #w-details { margin-top: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .w-detail {
+            background: rgba(56,189,248,.07); border: 1px solid rgba(56,189,248,.14);
+            border-radius: 12px; padding: 12px 14px;
+        }
+        .w-detail-lbl { font-size: 11px; color: var(--sky); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .w-detail-val { font-size: 20px; font-weight: 700; color: #fff; }
+
+        #w-forecast { margin-top: 22px; flex: 1; }
+        #w-forecast-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 14px; }
+        .fc-day { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+        .fc-day:last-child { border-bottom: none; }
+        .fc-name { font-size: 14px; color: var(--text-dim); width: 96px; }
+        .fc-icon { font-size: 26px; }
+        .fc-temps { text-align: right; }
+        .fc-max { font-size: 17px; font-weight: 700; color: #fff; }
+        .fc-min { font-size: 13px; color: var(--text-dim); }
+
+        #w-error { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 16px; color: var(--text-dim); font-size: 16px; }
+
+        /* ─── NEWS AREA ─── */
+        #news-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+        .news-section { flex: 1; display: flex; flex-direction: column; padding: 18px var(--pad); overflow: hidden; min-height: 0; }
+        .news-section:first-child { border-bottom: 1px solid var(--border); }
+
+        .sec-header { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; flex-shrink: 0; }
+        .sec-emoji { font-size: 26px; }
+        .sec-title { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
+        .sec-title.g { color: var(--gaming-lite); }
+        .sec-title.c { color: var(--cinema-lite); }
+        .sec-badge {
+            padding: 4px 13px; border-radius: 20px;
+            font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+        }
+        .sec-badge.g { background: rgba(139,92,246,.18); color: var(--gaming-lite); border: 1px solid rgba(139,92,246,.3); }
+        .sec-badge.c { background: rgba(245,158,11,.18); color: var(--cinema-lite); border: 1px solid rgba(245,158,11,.3); }
+        .sec-dots { margin-left: auto; display: flex; gap: 7px; align-items: center; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.15); transition: background .4s, transform .4s; }
+        .dot.active { transform: scale(1.3); }
+        .dot.g.active { background: var(--gaming); }
+        .dot.c.active { background: var(--cinema); }
+
+        /* ─── CARDS ─── */
+        .cards-wrap { flex: 1; overflow: hidden; min-height: 0; position: relative; }
+        .cards-track { display: flex; gap: var(--gap); height: 100%; }
+
+        .news-card {
+            flex: 1; min-width: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: opacity .5s;
+        }
+        .news-card.g { border-top: 3px solid var(--gaming); }
+        .news-card.c { border-top: 3px solid var(--cinema); }
+
+        .card-img {
+            width: 100%; height: 150px;
+            object-fit: cover; flex-shrink: 0;
+        }
+        .card-img-fallback {
+            width: 100%; height: 150px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 52px;
+        }
+        .card-img-fallback.g { background: linear-gradient(135deg, #1e1b4b, #2e1065); }
+        .card-img-fallback.c { background: linear-gradient(135deg, #431407, #7c2d12); }
+
+        .card-body { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .card-source { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; flex-shrink: 0; }
+        .card-source.g { color: var(--gaming); }
+        .card-source.c { color: var(--cinema); }
+        .card-title {
+            font-size: 17px; font-weight: 700; line-height: 1.4; color: #fff;
+            flex: 1;
+            display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .card-time { font-size: 12px; color: var(--text-dim); margin-top: 10px; flex-shrink: 0; }
+
+        .sec-loader { display: flex; align-items: center; justify-content: center; gap: 14px; height: 100%; color: var(--text-dim); font-size: 16px; }
+        .spinner { width: 26px; height: 26px; border: 3px solid rgba(255,255,255,.1); border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── TICKER ─── */
+        #ticker {
+            height: var(--ticker-h);
+            background: rgba(255,255,255,.025);
+            border-top: 1px solid var(--border);
+            display: flex; align-items: center;
+            overflow: hidden; position: relative; z-index: 10;
+        }
+        #ticker-label {
+            flex-shrink: 0; height: 100%;
+            background: linear-gradient(90deg, #5b21b6, #4f46e5);
+            display: flex; align-items: center;
+            padding: 0 28px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px; font-weight: 900; letter-spacing: 3px;
+            color: #fff; white-space: nowrap; z-index: 2;
+            clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 50%, calc(100% - 16px) 100%, 0 100%);
+            padding-right: 38px;
+        }
+        #ticker-wrap { flex: 1; overflow: hidden; }
+        #ticker-inner { display: inline-flex; white-space: nowrap; animation: scroll-ticker 90s linear infinite; }
+        @keyframes scroll-ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .tick-item { display: inline-flex; align-items: center; gap: 10px; padding: 0 40px; font-size: 17px; color: var(--text); }
+        .tick-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .tick-dot.g { background: var(--gaming); }
+        .tick-dot.c { background: var(--cinema); }
+        .tick-sep { color: rgba(255,255,255,.2); font-size: 10px; }
+    </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div id="header">
+    <div id="logo">
+        <div id="logo-emoji">🍽️</div>
+        <div>
+            <div id="logo-text">CAFÉTÉRIA</div>
+            <div id="logo-sub">Espace Info · En Direct</div>
+        </div>
+    </div>
+    <div id="live-badge">
+        <div id="live-dot"></div>
+        LIVE
+    </div>
+    <div id="datetime">
+        <div id="clock">--:--:--</div>
+        <div id="date">chargement...</div>
+    </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div id="main">
+
+    <!-- MÉTÉO -->
+    <div id="weather-panel">
+        <div id="w-city">📍 <span id="w-city-name">Paris</span></div>
+        <div id="weather-body">
+            <div id="w-error"><div class="spinner"></div><span>Chargement météo…</span></div>
+        </div>
+    </div>
+
+    <!-- NEWS -->
+    <div id="news-area">
+
+        <!-- JEUX VIDÉO -->
+        <div class="news-section" id="sec-gaming">
+            <div class="sec-header">
+                <span class="sec-emoji">🎮</span>
+                <span class="sec-title g">Jeux Vidéo</span>
+                <span class="sec-badge g">Actualités</span>
+                <div class="sec-dots" id="dots-gaming"></div>
+            </div>
+            <div class="cards-wrap" id="wrap-gaming">
+                <div class="sec-loader"><div class="spinner"></div><span>Chargement…</span></div>
+            </div>
+        </div>
+
+        <!-- CINÉMA -->
+        <div class="news-section" id="sec-cinema">
+            <div class="sec-header">
+                <span class="sec-emoji">🎬</span>
+                <span class="sec-title c">Cinéma &amp; Studios</span>
+                <span class="sec-badge c">Actualités</span>
+                <div class="sec-dots" id="dots-cinema"></div>
+            </div>
+            <div class="cards-wrap" id="wrap-cinema">
+                <div class="sec-loader"><div class="spinner"></div><span>Chargement…</span></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ═══ TICKER ═══ -->
+<div id="ticker">
+    <div id="ticker-label">⚡ EN BREF</div>
+    <div id="ticker-wrap">
+        <div id="ticker-inner"><span class="tick-item">Chargement des titres…</span></div>
+    </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  ⚙️  CONFIGURATION — modifiez cette section selon vos besoins
+// ══════════════════════════════════════════════════════════════
+const CFG = {
+    city: 'Paris',                   // Ville pour la météo
+    cardsPerView: 3,                 // Nombre de cartes visibles simultanément
+    rotationMs: 9000,                // Durée entre chaque rotation (ms)
+    weatherRefreshMs: 10 * 60000,   // Rafraîchissement météo (10 min)
+    newsRefreshMs: 15 * 60000,      // Rafraîchissement news (15 min)
+    gamingFeeds: [
+        'https://www.jeuxvideo.com/rss/rss-news.xml',       // Jeux Vidéo .com (FR)
+        'https://feeds.feedburner.com/ign/games-all',        // IGN Games (EN)
+    ],
+    cinemaFeeds: [
+        'https://feeds.feedburner.com/slash-film',           // /Film (EN)
+        'https://variety.com/v/film/feed/',                  // Variety Film (EN)
+    ],
+};
+
+// ══════════════════════════════════════════════════════════════
+//  CODES MÉTÉO → EMOJI  (source: wttr.in)
+// ══════════════════════════════════════════════════════════════
+const W_ICON = {
+    113:'☀️',116:'⛅',119:'☁️',122:'☁️',143:'🌫️',
+    176:'🌦️',179:'🌨️',182:'🌧️',185:'🌧️',200:'⛈️',
+    227:'🌨️',230:'❄️',248:'🌫️',260:'🌫️',263:'🌦️',
+    266:'🌦️',281:'🌧️',284:'🌧️',293:'🌦️',296:'🌧️',
+    299:'🌧️',302:'🌧️',305:'🌧️',308:'🌧️',311:'🌧️',
+    314:'🌧️',317:'🌧️',320:'🌨️',323:'🌨️',326:'🌨️',
+    329:'🌨️',332:'❄️',335:'❄️',338:'❄️',350:'🌧️',
+    353:'🌦️',356:'🌧️',359:'🌧️',362:'🌨️',365:'🌨️',
+    368:'🌨️',371:'❄️',374:'🌧️',377:'🌧️',386:'⛈️',
+    389:'⛈️',392:'⛈️',395:'⛈️',
+};
+
+const DAYS_FR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+const MONTHS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+// ══════════════════════════════════════════════════════════════
+//  HORLOGE
+// ══════════════════════════════════════════════════════════════
+function tickClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+        [now.getHours(), now.getMinutes(), now.getSeconds()]
+            .map(n => String(n).padStart(2, '0')).join(':');
+    document.getElementById('date').textContent =
+        `${DAYS_FR[now.getDay()]} ${now.getDate()} ${MONTHS_FR[now.getMonth()]} ${now.getFullYear()}`;
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+// ══════════════════════════════════════════════════════════════
+//  MÉTÉO  (wttr.in JSON API — gratuit, sans clé)
+// ══════════════════════════════════════════════════════════════
+async function loadWeather() {
+    try {
+        const r = await fetch(`https://wttr.in/${encodeURIComponent(CFG.city)}?format=j1`);
+        if (!r.ok) throw new Error(r.status);
+        const d = await r.json();
+        renderWeather(d);
+    } catch {
+        document.getElementById('weather-body').innerHTML =
+            `<div id="w-error"><span style="font-size:52px">⚠️</span><span>Météo indisponible</span></div>`;
+    }
+}
+
+function renderWeather(d) {
+    const cur = d.current_condition[0];
+    const code = +cur.weatherCode;
+    const icon  = W_ICON[code] || '🌡️';
+    const temp  = cur.temp_C;
+    const feels = cur.FeelsLikeC;
+    const desc  = (cur.lang_fr?.[0]?.value) || cur.weatherDesc[0].value;
+    const hum   = cur.humidity;
+    const wind  = cur.windspeedKmph;
+    const vis   = cur.visibility;
+
+    const forecasts = d.weather.slice(0, 3).map((day, i) => {
+        let name = i === 0 ? "Aujourd'hui" : i === 1 ? 'Demain' : DAYS_FR[new Date(day.date).getDay()];
+        const ico = W_ICON[+(day.hourly[4]?.weatherCode ?? 113)] || '🌡️';
+        return `<div class="fc-day">
+            <span class="fc-name">${name}</span>
+            <span class="fc-icon">${ico}</span>
+            <div class="fc-temps">
+                <div class="fc-max">${day.maxtempC}°</div>
+                <div class="fc-min">${day.mintempC}°</div>
+            </div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('weather-body').innerHTML = `
+        <div id="w-main">
+            <div id="w-icon">${icon}</div>
+            <div>
+                <div id="w-temp">${temp}<span id="w-unit">°C</span></div>
+            </div>
+        </div>
+        <div id="w-desc">${desc}</div>
+        <div id="w-feels">Ressenti ${feels}°C</div>
+        <div id="w-details">
+            <div class="w-detail"><div class="w-detail-lbl">💧 Humidité</div><div class="w-detail-val">${hum}%</div></div>
+            <div class="w-detail"><div class="w-detail-lbl">💨 Vent</div><div class="w-detail-val">${wind} km/h</div></div>
+            <div class="w-detail"><div class="w-detail-lbl">👁 Visibilité</div><div class="w-detail-val">${vis} km</div></div>
+            <div class="w-detail"><div class="w-detail-lbl">🌡️ Ressenti</div><div class="w-detail-val">${feels}°C</div></div>
+        </div>
+        <div id="w-forecast">
+            <div id="w-forecast-title">Prévisions 3 jours</div>
+            ${forecasts}
+        </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RSS → JSON  (rss2json.com, gratuit sans clé — 1000 req/jour)
+// ══════════════════════════════════════════════════════════════
+const RSS2JSON = 'https://api.rss2json.com/v1/api.json?count=30&rss_url=';
+
+async function fetchFeed(url) {
+    const r = await fetch(RSS2JSON + encodeURIComponent(url));
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    if (d.status !== 'ok') throw new Error('feed error');
+    return d.items ?? [];
+}
+
+async function fetchFeeds(urls) {
+    const results = await Promise.allSettled(urls.map(fetchFeed));
+    const items = [];
+    for (const r of results) if (r.status === 'fulfilled') items.push(...r.value);
+    const seen = new Set();
+    return items
+        .filter(it => { const k = (it.title ?? '').trim().toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
+        .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+}
+
+// ══════════════════════════════════════════════════════════════
+//  UTILITAIRES CARDS
+// ══════════════════════════════════════════════════════════════
+function decodeHtml(s) {
+    const t = document.createElement('textarea');
+    t.innerHTML = s ?? '';
+    return t.value;
+}
+
+function timeAgo(str) {
+    if (!str) return '';
+    const diff = Date.now() - new Date(str);
+    const m = Math.floor(diff / 60000);
+    const h = Math.floor(diff / 3600000);
+    const j = Math.floor(diff / 86400000);
+    if (m < 1) return "À l'instant";
+    if (m < 60) return `Il y a ${m} min`;
+    if (h < 24) return `Il y a ${h}h`;
+    return `Il y a ${j}j`;
+}
+
+function getImage(item) {
+    if (item.thumbnail?.startsWith('http')) return item.thumbnail;
+    if (item.enclosure?.link?.match(/\.(jpe?g|png|webp|gif)/i)) return item.enclosure.link;
+    const m = (item.content ?? '').match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (m?.[1]?.startsWith('http')) return m[1];
+    return null;
+}
+
+function buildCard(item, type) {
+    const title = decodeHtml(item.title);
+    const source = item.author || (type === 'g' ? 'Jeux Vidéo' : 'Cinéma');
+    const imgUrl = getImage(item);
+    const imgHtml = imgUrl
+        ? `<img class="card-img" src="${imgUrl}" alt="" loading="lazy"
+              onerror="this.outerHTML='<div class=\\"card-img-fallback ${type}\\">${type === 'g' ? '🎮' : '🎬'}</div>'">`
+        : `<div class="card-img-fallback ${type}">${type === 'g' ? '🎮' : '🎬'}</div>`;
+
+    return `<div class="news-card ${type}">
+        ${imgHtml}
+        <div class="card-body">
+            <div class="card-source ${type}">${source}</div>
+            <div class="card-title">${title}</div>
+            <div class="card-time">${timeAgo(item.pubDate)}</div>
+        </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ROTATEUR DE CARTES
+// ══════════════════════════════════════════════════════════════
+function makeRotator(wrapId, dotsId, items, type) {
+    const wrap = document.getElementById(wrapId);
+    const dotsEl = document.getElementById(dotsId);
+
+    if (!items.length) {
+        wrap.innerHTML = `<div class="sec-loader"><span>Aucune actualité disponible</span></div>`;
+        return null;
+    }
+
+    const n = CFG.cardsPerView;
+    const pages = Math.ceil(items.length / n);
+    let page = 0;
+
+    const numDots = Math.min(pages, 8);
+    dotsEl.innerHTML = Array.from({length: numDots}, (_, i) =>
+        `<div class="dot ${type}" id="${dotsId}-${i}"></div>`).join('');
+
+    function show(p) {
+        const slice = items.slice(p * n, p * n + n);
+        wrap.style.opacity = '0';
+        wrap.style.transition = 'opacity .45s';
+
+        setTimeout(() => {
+            wrap.innerHTML = `<div class="cards-track">${slice.map(it => buildCard(it, type)).join('')}</div>`;
+            wrap.style.opacity = '1';
+        }, 220);
+
+        dotsEl.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === p % numDots));
+    }
+
+    show(0);
+    return setInterval(() => { page = (page + 1) % pages; show(page); }, CFG.rotationMs);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  TICKER
+// ══════════════════════════════════════════════════════════════
+function updateTicker(gaming, cinema) {
+    const max = 15;
+    const g = gaming.slice(0, max);
+    const c = cinema.slice(0, max);
+    const mixed = [];
+    for (let i = 0; i < Math.max(g.length, c.length); i++) {
+        if (g[i]) mixed.push({it: g[i], type: 'g'});
+        if (c[i]) mixed.push({it: c[i], type: 'c'});
+    }
+    if (!mixed.length) return;
+
+    const makeItems = arr => arr.map(({it, type}) =>
+        `<span class="tick-item">
+            <span class="tick-dot ${type}"></span>
+            ${decodeHtml(it.title)}
+         </span>
+         <span class="tick-sep">◆</span>`
+    ).join('');
+
+    // duplicate for seamless loop
+    const inner = document.getElementById('ticker-inner');
+    inner.innerHTML = makeItems(mixed) + makeItems(mixed);
+
+    // reset animation
+    inner.style.animation = 'none';
+    void inner.offsetWidth;
+    const totalW = inner.scrollWidth;
+    const dur = Math.max(60, (totalW / 2) / 110); // ~110 px/s
+    inner.style.animation = `scroll-ticker ${dur}s linear infinite`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CHARGEMENT PRINCIPAL
+// ══════════════════════════════════════════════════════════════
+let timerG = null;
+let timerC = null;
+
+async function loadAll() {
+    const [gaming, cinema] = await Promise.all([
+        fetchFeeds(CFG.gamingFeeds).catch(() => []),
+        fetchFeeds(CFG.cinemaFeeds).catch(() => []),
+    ]);
+
+    if (timerG) clearInterval(timerG);
+    if (timerC) clearInterval(timerC);
+
+    timerG = makeRotator('wrap-gaming', 'dots-gaming', gaming, 'g');
+    timerC = makeRotator('wrap-cinema', 'dots-cinema', cinema, 'c');
+
+    updateTicker(gaming, cinema);
+}
+
+// Lancement
+loadWeather();
+loadAll();
+
+// Rafraîchissements automatiques
+setInterval(loadWeather, CFG.weatherRefreshMs);
+setInterval(loadAll, CFG.newsRefreshMs);
+</script>
+
+</body>
+</html>
