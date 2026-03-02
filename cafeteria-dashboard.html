@@ -72,16 +72,8 @@
             border-bottom: 2px solid var(--orange);
         }
 
-        #logo { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; line-height: 1; }
-        #logo-text {
-            font-family: 'Rajdhani', sans-serif;
-            font-size: clamp(28px, 3.2vw, 52px); font-weight: 700;
-            color: #ffffff;
-            letter-spacing: 3px;
-            margin-right: -3px;
-            text-transform: uppercase;
-        }
-        #logo-sub { font-family: 'Rajdhani', sans-serif; font-size: clamp(10px, 1.1vw, 18px); font-weight: 600; color: #ffffff; letter-spacing: 9px; margin-right: -9px; text-transform: uppercase; margin-top: 2px; }
+        #logo { display: flex; align-items: center; justify-content: center; }
+        #logo img { height: clamp(44px, 6vh, 68px); width: auto; }
 
         #live-badge {
             display: flex; align-items: center; gap: 9px;
@@ -114,12 +106,12 @@
             flex-shrink: 0;
             background: linear-gradient(175deg, #2a3560 0%, #1e2845 60%, #181f3a 100%);
             border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            padding: 28px 26px;
+            display: flex; flex-direction: column;
+            padding: 22px 22px 16px;
             overflow: hidden;
             position: relative;
         }
+        #weather-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
         #weather-panel::before {
             content: '';
             position: absolute; top: -80px; right: -80px;
@@ -128,33 +120,33 @@
             border-radius: 50%; pointer-events: none;
         }
 
-        #w-city { font-size: 14px; color: var(--cyan); text-transform: uppercase; letter-spacing: 4px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        #w-city { font-size: 16px; color: var(--cyan-lite); text-transform: uppercase; letter-spacing: 3px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 
-        #w-main { margin-top: 20px; display: flex; align-items: flex-start; gap: 12px; }
-        #w-icon { font-size: clamp(48px, 6vw, 88px); line-height: 1; filter: drop-shadow(0 0 18px rgba(21,178,204,.45)); }
-        #w-temp { font-family: 'Rajdhani', sans-serif; font-size: clamp(56px, 7vw, 100px); font-weight: 700; line-height: 1; color: var(--text); }
-        #w-unit { font-size: clamp(22px, 2.5vw, 40px); color: var(--text-dim); }
+        #w-main { display: flex; align-items: flex-start; gap: 10px; }
+        #w-icon { font-size: clamp(44px, 5.5vw, 72px); line-height: 1; filter: drop-shadow(0 0 18px rgba(21,178,204,.45)); }
+        #w-temp { font-family: 'Rajdhani', sans-serif; font-size: clamp(48px, 6vw, 82px); font-weight: 700; line-height: 1; color: var(--text); }
+        #w-unit { font-size: clamp(20px, 2vw, 32px); color: var(--text-dim); }
 
-        #w-desc { font-size: 20px; color: var(--cyan-lite); font-weight: 600; margin-top: 10px; }
-        #w-feels { font-size: 14px; color: var(--text-dim); margin-top: 4px; }
+        #w-desc { font-size: 18px; color: var(--cyan-lite); font-weight: 600; margin-top: 8px; }
+        #w-feels { font-size: 13px; color: var(--text-dim); margin-top: 3px; }
 
-        #w-details { margin-top: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        #w-details { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .w-detail {
             background: rgba(21,178,204,.07); border: 1px solid rgba(21,178,204,.18);
-            border-radius: 8px; padding: 12px 14px;
+            border-radius: 8px; padding: 8px 12px;
         }
-        .w-detail-lbl { font-size: 12px; color: var(--cyan); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600; }
-        .w-detail-val { font-size: 22px; font-weight: 700; color: var(--text); }
+        .w-detail-lbl { font-size: 11px; color: var(--cyan); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; font-weight: 600; }
+        .w-detail-val { font-size: 18px; font-weight: 700; color: var(--text); }
 
-        #w-forecast { margin-top: 22px; flex: 1; }
-        #w-forecast-title { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 14px; font-weight: 600; }
-        .fc-day { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+        #w-forecast { margin-top: 14px; flex: 1; overflow: hidden; }
+        #w-forecast-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 8px; font-weight: 600; }
+        .fc-day { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
         .fc-day:last-child { border-bottom: none; }
-        .fc-name { font-size: 15px; color: var(--text-dim); width: 96px; font-weight: 600; }
-        .fc-icon { font-size: 26px; }
+        .fc-name { font-size: 14px; color: var(--text-dim); width: 90px; font-weight: 600; }
+        .fc-icon { font-size: 22px; }
         .fc-temps { text-align: right; }
-        .fc-max { font-size: 18px; font-weight: 700; color: var(--text); }
-        .fc-min { font-size: 14px; color: var(--text-dim); }
+        .fc-max { font-size: 16px; font-weight: 700; color: var(--text); }
+        .fc-min { font-size: 13px; color: var(--text-dim); }
 
         #w-error { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 16px; color: var(--text-dim); font-size: 16px; }
 
@@ -162,13 +154,13 @@
         #news-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
 
         .news-section { flex: 1; display: flex; flex-direction: column; padding: 18px var(--pad); overflow: hidden; min-height: 0; }
-        .news-section:first-child { border-bottom: 1px solid var(--border); }
 
         .sec-header { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; flex-shrink: 0; }
         .sec-emoji { font-size: 26px; }
         .sec-title { font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; }
         .sec-title.g { color: var(--orange-lite); }
         .sec-title.s { color: var(--cyan-lite); }
+        .sec-title.q { color: var(--orange-lite); }
         .sec-badge {
             padding: 4px 14px; border-radius: 4px;
             font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
@@ -176,11 +168,13 @@
         }
         .sec-badge.g { background: rgba(255,172,77,.15); color: var(--orange); border: 1px solid rgba(255,172,77,.35); }
         .sec-badge.s { background: rgba(21,178,204,.15); color: var(--cyan); border: 1px solid rgba(21,178,204,.35); }
+        .sec-badge.q { background: rgba(255,172,77,.15); color: var(--orange); border: 1px solid rgba(255,172,77,.35); }
         .sec-dots { margin-left: auto; display: flex; gap: 7px; align-items: center; }
         .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.15); transition: background .4s, transform .4s; }
         .dot.active { transform: scale(1.3); }
         .dot.g.active { background: var(--orange); }
         .dot.s.active { background: var(--cyan); }
+        .dot.q.active { background: var(--orange); }
 
         /* ─── CARTES ─── */
         .cards-wrap { flex: 1; overflow: hidden; min-height: 0; position: relative; }
@@ -198,6 +192,7 @@
         }
         .news-card.g { border-top: 3px solid var(--orange); }
         .news-card.s { border-top: 3px solid var(--cyan); }
+        .news-card.q { border-top: 3px solid var(--orange); }
 
         .card-img-wrap {
             width: 100%; height: clamp(100px, 14vh, 160px); flex-shrink: 0;
@@ -205,6 +200,7 @@
         }
         .card-img-wrap.g { background-color: #3a2a10; }
         .card-img-wrap.s { background-color: #0c2a3a; }
+        .card-img-wrap.q { background-color: #3a2a10; }
         .card-img-fallback {
             width: 100%; height: clamp(100px, 14vh, 160px); flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
@@ -212,11 +208,13 @@
         }
         .card-img-fallback.g { background: linear-gradient(135deg, #3a2a10, #5c3d15); }
         .card-img-fallback.s { background: linear-gradient(135deg, #0c2a3a, #0e3a50); }
+        .card-img-fallback.q { background: linear-gradient(135deg, #3a2a10, #5c3d15); }
 
         .card-body { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         .card-source { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; flex-shrink: 0; font-family: 'Rajdhani', sans-serif; }
         .card-source.g { color: var(--orange); }
         .card-source.s { color: var(--cyan); }
+        .card-source.q { color: var(--orange); }
         .card-title {
             font-size: clamp(14px, 1.2vw, 18px); font-weight: 700; line-height: 1.35; color: var(--text);
             flex-shrink: 0;
@@ -270,8 +268,7 @@
 <!-- ═══ EN-TÊTE ═══ -->
 <div id="header">
     <div id="logo">
-        <div id="logo-text">ISART</div>
-        <div id="logo-sub">DIGITAL</div>
+        <img src="isart-logo.svg" alt="ISART Digital">
     </div>
     <div id="live-badge">
         <div id="live-dot"></div>
@@ -294,16 +291,15 @@
         </div>
     </div>
 
-    <!-- ACTUALITÉS -->
+    <!-- ACTUALITÉS QUÉBEC -->
     <div id="news-area">
 
-        <!-- JEUX VIDÉO — ACTUALITÉS -->
-        <div class="news-section" id="sec-gaming">
+        <div class="news-section" id="sec-actu">
             <div class="sec-header">
-                <span class="sec-emoji">🎮</span>
-                <span class="sec-title g">Jeux Vidéo</span>
-                <span class="sec-badge g">Actualités</span>
-                <div class="sec-dots" id="dots-gaming"></div>
+                <span class="sec-emoji">📰</span>
+                <span class="sec-title q">Actualités</span>
+                <span class="sec-badge q">Québec</span>
+                <div class="sec-dots" id="dots-actu"></div>
             </div>
             <div class="cards-wrap" id="wrap-gaming">
                 <div class="sec-loader"><div class="spinner"></div><span>Chargement…</span></div>
@@ -357,7 +353,7 @@ const CFG = {
         'https://www.lemonde.fr/jeux-video/rss_full.xml',
     ],
 
-    // 🏭 Flux RSS — Studios, Cinéma & Game Dev
+    // 🎬 Flux RSS — Studios, Cinéma & Game Dev
     studioFeeds: [
         'https://www.gamesindustry.biz/rss/',
         'https://www.presse-citron.net/category/gaming/feed/',
@@ -479,9 +475,6 @@ function renderWeather(d) {
         </div>`;
 }
 
-// ══════════════════════════════════════════════════════════════
-//  THE GUARDIAN API  (CORS natif, clé "test" publique, sans proxy)
-// ══════════════════════════════════════════════════════════════
 // ══════════════════════════════════════════════════════════════
 //  RSS → JSON  (4 proxies CORS en cascade)
 // ══════════════════════════════════════════════════════════════
@@ -613,7 +606,7 @@ function buildCard(item, type) {
     const title = decodeHtml(item.title);
     const source = item.author || (type === 'g' ? 'Jeux Vidéo' : 'Studios');
     const imgUrl = getImage(item);
-    const fallbackEmoji = type === 'g' ? '🎮' : '🏭';
+    const fallbackEmoji = type === 'g' ? '🎮' : '🎬';
     const imgHtml = imgUrl
         ? `<div class="card-img-wrap ${type}" style="background-image:url('${imgUrl.replace(/'/g, "\\'")}')"></div>`
         : `<div class="card-img-fallback ${type}">${fallbackEmoji}</div>`;
@@ -670,13 +663,12 @@ function makeRotator(wrapId, dotsId, items, type) {
 //  BANDEAU DÉFILANT
 // ══════════════════════════════════════════════════════════════
 function updateTicker(gaming, studio) {
-    const max = 15;
-    const g = gaming.slice(0, max);
-    const s = studio.slice(0, max);
+    const g = (gaming || []).slice(0, 15).map(it => ({it, type: 'g'}));
+    const s = (studio || []).slice(0, 15).map(it => ({it, type: 's'}));
     const mixed = [];
     for (let i = 0; i < Math.max(g.length, s.length); i++) {
-        if (g[i]) mixed.push({it: g[i], type: 'g'});
-        if (s[i]) mixed.push({it: s[i], type: 's'});
+        if (g[i]) mixed.push(g[i]);
+        if (s[i]) mixed.push(s[i]);
     }
     if (!mixed.length) return;
 
@@ -701,8 +693,8 @@ function updateTicker(gaming, studio) {
 // ══════════════════════════════════════════════════════════════
 //  CHARGEMENT PRINCIPAL
 // ══════════════════════════════════════════════════════════════
-let timerG = null;
-let timerS = null;
+let timerActu = null;
+let timerActu2 = null;
 
 async function loadAll() {
     // Flux RSS français en parallèle
@@ -711,11 +703,11 @@ async function loadAll() {
         fetchFeeds(CFG.studioFeeds).catch(() => []),
     ]);
 
-    if (timerG) clearInterval(timerG);
-    if (timerS) clearInterval(timerS);
+    if (timerActu) clearInterval(timerActu);
+    if (timerActu2) clearInterval(timerActu2);
 
-    timerG = makeRotator('wrap-gaming', 'dots-gaming', gaming, 'g');
-    timerS = makeRotator('wrap-studio', 'dots-studio', studio, 's');
+    timerActu = makeRotator('wrap-gaming', 'dots-gaming', gaming, 'g');
+    timerActu2 = makeRotator('wrap-studio', 'dots-studio', studio, 's');
 
     updateTicker(gaming, studio);
 }
