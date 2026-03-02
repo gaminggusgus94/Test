@@ -330,13 +330,18 @@ const CFG = {
     weatherRefreshMs: 10 * 60000,
     newsRefreshMs: 15 * 60000,
 
+    // Reddit uniquement comme dernier recours
     quebecSubreddits: ['Quebec', 'montreal'],
 
+    // Flux RSS québécois — ordonnés par fiabilité CORS
     quebecFeeds: [
-        'https://ici.radio-canada.ca/rss/4159',
-        'https://www.ledevoir.com/rss/manchettes.xml',
-        'https://www.lapresse.ca/actualites/rss',
-        'https://www.tvanouvelles.ca/rss',
+        'https://ici.radio-canada.ca/rss/4159',          // Radio-Canada manchettes
+        'https://ici.radio-canada.ca/rss/57',            // Radio-Canada Québec
+        'https://www.tvanouvelles.ca/rss',               // TVA Nouvelles
+        'https://www.journaldemontreal.com/rss',         // Journal de Montréal
+        'https://www.journaldequebec.com/rss',           // Journal de Québec
+        'https://www.lapresse.ca/actualites/rss',        // La Presse
+        'https://www.ledevoir.com/rss/manchettes.xml',   // Le Devoir
     ],
 };
 
@@ -449,31 +454,7 @@ function renderWeather(d) {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  THE GUARDIAN API
-// ══════════════════════════════════════════════════════════════
-async function fetchGuardian(query, pageSize) {
-    try {
-        const url = 'https://content.guardianapis.com/search'
-            + '?q=' + encodeURIComponent(query)
-            + '&show-fields=thumbnail,trailText'
-            + '&page-size=' + (pageSize || 20)
-            + '&order-by=newest'
-            + '&api-key=test';
-        const r = await fetch(url, { signal: sig(15000) });
-        if (!r.ok) throw new Error(r.status);
-        const d = await r.json();
-        return (d.response.results || []).map(a => ({
-            title: a.webTitle,
-            pubDate: a.webPublicationDate,
-            thumbnail: (a.fields && a.fields.thumbnail) || null,
-            content: (a.fields && a.fields.trailText) || '',
-            author: 'The Guardian',
-        }));
-    } catch { return []; }
-}
-
-// ══════════════════════════════════════════════════════════════
-//  REDDIT JSON API
+//  REDDIT JSON API  (fallback uniquement — Québec/Montréal)
 // ══════════════════════════════════════════════════════════════
 async function fetchReddit(subreddit) {
     try {
@@ -504,12 +485,30 @@ async function fetchReddit(subreddit) {
     } catch { return []; }
 }
 
+// Mots-clés québécois pour filtrer les posts Reddit en français
+const QUEBEC_KEYWORDS = ['québec','montreal','montréal','laval','gatineau','sherbrooke','longueuil','saguenay','legault','caq','plq','pq','qc','hydro-québec','sqdc','saaq','ramq','desjardins','bell canada'];
+const ENGLISH_ONLY = /^[a-zA-Z0-9\s\W]+$/;
+
+function isQuebecPost(title) {
+    const t = title.toLowerCase();
+    // Garder si contient un mot-clé Québec
+    if (QUEBEC_KEYWORDS.some(k => t.includes(k))) return true;
+    // Garder si le titre n'est pas 100% anglais (contient des caractères français)
+    if (/[àâäéèêëîïôùûüç]/i.test(title)) return true;
+    return false;
+}
+
 async function fetchRedditMultiple(subreddits) {
     const results = await Promise.all(subreddits.map(fetchReddit));
     const items = results.flat();
     const seen = new Set();
     return items
-        .filter(it => { const k = it.title.trim().toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
+        .filter(it => {
+            const k = it.title.trim().toLowerCase();
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return isQuebecPost(it.title);
+        })
         .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
 }
 
@@ -580,10 +579,15 @@ async function fetchFeed(url) {
 async function fetchFeeds(urls) {
     const results = await Promise.allSettled(urls.map(fetchFeed));
     const items = [];
-    for (const r of results) if (r.status === 'fulfilled') items.push(...r.value);
+    for (const r of results) if (r.status === 'fulfilled' && r.value.length) items.push(...r.value);
     const seen = new Set();
     return items
-        .filter(it => { const k = (it.title ?? '').trim().toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
+        .filter(it => {
+            const k = (it.title ?? '').trim().toLowerCase();
+            if (!k || seen.has(k)) return false;
+            seen.add(k);
+            return true;
+        })
         .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
 }
 
