@@ -283,8 +283,20 @@
     <div id="logo">
         <div id="logo-icon">
             <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <polygon points="50,2 0,100 30,100" fill="white"/>
-                <polygon points="50,2 70,100 100,100" fill="white"/>
+                <defs>
+                    <filter id="neon" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="3" result="blur"/>
+                        <feMerge>
+                            <feMergeNode in="blur"/>
+                            <feMergeNode in="blur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+                <g filter="url(#neon)" stroke="#7ae7ff" stroke-width="2.5" fill="none" stroke-linejoin="miter">
+                    <path d="M50,5 L93,88 L7,88 Z"/>
+                    <path d="M50,22 L80,80 L20,80 Z"/>
+                </g>
             </svg>
         </div>
         <div>
