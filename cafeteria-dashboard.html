@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Dashboard Cafétéria</title>
+    <title>Dashboard Salle Staff</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -255,9 +255,9 @@
 <!-- ═══ HEADER ═══ -->
 <div id="header">
     <div id="logo">
-        <div id="logo-emoji">🍽️</div>
+        <div id="logo-emoji">🏢</div>
         <div>
-            <div id="logo-text">CAFÉTÉRIA</div>
+            <div id="logo-text">SALLE STAFF</div>
             <div id="logo-sub">Espace Info · En Direct</div>
         </div>
     </div>
@@ -276,7 +276,7 @@
 
     <!-- MÉTÉO -->
     <div id="weather-panel">
-        <div id="w-city">📍 <span id="w-city-name">Paris</span></div>
+        <div id="w-city">📍 <span id="w-city-name">Montréal</span></div>
         <div id="weather-body">
             <div id="w-error"><div class="spinner"></div><span>Chargement météo…</span></div>
         </div>
@@ -327,18 +327,20 @@
 //  ⚙️  CONFIGURATION — modifiez cette section selon vos besoins
 // ══════════════════════════════════════════════════════════════
 const CFG = {
-    city: 'Paris',                   // Ville pour la météo
+    city: 'Montreal',                // Ville pour la météo
     cardsPerView: 3,                 // Nombre de cartes visibles simultanément
     rotationMs: 9000,                // Durée entre chaque rotation (ms)
     weatherRefreshMs: 10 * 60000,   // Rafraîchissement météo (10 min)
     newsRefreshMs: 15 * 60000,      // Rafraîchissement news (15 min)
     gamingFeeds: [
-        'https://www.jeuxvideo.com/rss/rss-news.xml',       // Jeux Vidéo .com (FR)
-        'https://feeds.feedburner.com/ign/games-all',        // IGN Games (EN)
+        'https://www.polygon.com/rss/index.xml',             // Polygon (EN)
+        'https://kotaku.com/rss',                            // Kotaku (EN)
+        'https://feeds.feedburner.com/ign/games-all',        // IGN (EN)
     ],
     cinemaFeeds: [
+        'https://screenrant.com/feed/',                      // Screen Rant (EN)
+        'https://collider.com/feed/',                        // Collider (EN)
         'https://feeds.feedburner.com/slash-film',           // /Film (EN)
-        'https://variety.com/v/film/feed/',                  // Variety Film (EN)
     ],
 };
 
@@ -436,16 +438,61 @@ function renderWeather(d) {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  RSS → JSON  (rss2json.com, gratuit sans clé — 1000 req/jour)
+//  RSS → JSON  (double fallback pour fiabilité maximale)
+//  1. rss2json.com (JSON direct)
+//  2. allorigins.win CORS proxy + parsing XML natif
 // ══════════════════════════════════════════════════════════════
-const RSS2JSON = 'https://api.rss2json.com/v1/api.json?count=30&rss_url=';
+
+function parseRSSXML(xmlStr) {
+    try {
+        const doc = new DOMParser().parseFromString(xmlStr, 'text/xml');
+        if (doc.querySelector('parsererror')) return [];
+        return Array.from(doc.querySelectorAll('item')).slice(0, 25).map(item => {
+            const get = tag => item.querySelector(tag)?.textContent?.trim() ?? '';
+            // Image: cherche dans les enfants directs (media:thumbnail) puis enclosure puis contenu
+            let thumbnail = '';
+            for (const el of item.children) {
+                if (el.localName === 'thumbnail') { thumbnail = el.getAttribute('url') ?? ''; break; }
+            }
+            if (!thumbnail) {
+                const enc = item.querySelector('enclosure');
+                if (enc && (enc.getAttribute('type') ?? '').startsWith('image'))
+                    thumbnail = enc.getAttribute('url') ?? '';
+            }
+            if (!thumbnail) {
+                const cnt = get('encoded') || get('description');
+                const m = cnt.match(/<img[^>]+src=["']([^"']+)["']/i);
+                if (m?.[1]?.startsWith('http')) thumbnail = m[1];
+            }
+            return {
+                title: get('title'),
+                pubDate: get('pubDate'),
+                thumbnail,
+                content: get('encoded') || get('description'),
+                author: get('creator') || get('author'),
+            };
+        }).filter(it => it.title);
+    } catch { return []; }
+}
 
 async function fetchFeed(url) {
-    const r = await fetch(RSS2JSON + encodeURIComponent(url));
-    if (!r.ok) throw new Error(r.status);
-    const d = await r.json();
-    if (d.status !== 'ok') throw new Error('feed error');
-    return d.items ?? [];
+    // Tentative 1 : rss2json.com (rapide, retourne du JSON)
+    try {
+        const r = await fetch(
+            `https://api.rss2json.com/v1/api.json?count=25&rss_url=${encodeURIComponent(url)}`,
+            { signal: AbortSignal.timeout(7000) }
+        );
+        const d = await r.json();
+        if (d.status === 'ok' && d.items?.length) return d.items;
+    } catch { /* on passe au fallback */ }
+
+    // Tentative 2 : allorigins.win + parsing XML natif
+    const r2 = await fetch(
+        `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+        { signal: AbortSignal.timeout(10000) }
+    );
+    const d2 = await r2.json();
+    return parseRSSXML(d2.contents ?? '');
 }
 
 async function fetchFeeds(urls) {
