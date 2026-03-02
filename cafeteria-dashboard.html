@@ -72,8 +72,18 @@
             border-bottom: 2px solid var(--orange);
         }
 
-        #logo { display: flex; align-items: center; gap: 18px; }
-        #logo-icon { display: flex; align-items: center; }
+        @keyframes neon-pulse {
+            0%, 100% { filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px #FFAC4D) drop-shadow(0 0 24px rgba(255,172,77,.55)); }
+            50%       { filter: drop-shadow(0 0 6px #fff) drop-shadow(0 0 18px #FFAC4D) drop-shadow(0 0 42px rgba(255,172,77,.85)); }
+        }
+
+        #logo { display: flex; align-items: center; gap: 22px; }
+        #logo-icon {
+            display: flex; align-items: center; justify-content: center;
+            width: 56px; height: 56px;
+            animation: neon-pulse 3s ease-in-out infinite;
+        }
+        #logo-icon svg { width: 100%; height: 100%; }
         #logo-text {
             font-family: 'Rajdhani', sans-serif;
             font-size: 32px; font-weight: 700;
@@ -272,7 +282,7 @@
 <div id="header">
     <div id="logo">
         <div id="logo-icon">
-            <svg width="48" height="46" viewBox="0 0 110 105" xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="0 0 110 105" xmlns="http://www.w3.org/2000/svg">
                 <polygon points="55,2 108,103 80,103 55,50 30,103 2,103" fill="white"/>
             </svg>
         </div>
@@ -744,8 +754,36 @@ async function loadAll() {
     updateTicker(gaming, studio);
 }
 
+// ══════════════════════════════════════════════════════════════
+//  DIAGNOSTIC RÉSEAU (temporaire — affiché en console + badge)
+// ══════════════════════════════════════════════════════════════
+async function netDiag() {
+    const tests = [
+        { name: 'Open-Meteo', url: `https://api.open-meteo.com/v1/forecast?latitude=${CFG.lat}&longitude=${CFG.lon}&current=temperature_2m&timezone=UTC` },
+        { name: 'Reddit',     url: 'https://www.reddit.com/r/games/hot.json?limit=1&raw_json=1' },
+        { name: 'rss2json',   url: 'https://api.rss2json.com/v1/api.json?count=1&rss_url=https%3A%2F%2Fkotaku.com%2Frss' },
+    ];
+    const results = [];
+    for (const t of tests) {
+        try {
+            const r = await fetch(t.url, { signal: sig(8000) });
+            results.push(`${t.name}: ${r.ok ? '✅' : '❌ HTTP ' + r.status}`);
+        } catch (e) {
+            results.push(`${t.name}: ❌ ${e.message || 'bloqué'}`);
+        }
+    }
+    console.log('[DIAG]', results.join(' | '));
+    // Badge visible sur l'écran
+    const badge = document.createElement('div');
+    badge.style.cssText = 'position:fixed;bottom:76px;right:12px;z-index:9998;background:rgba(0,0,0,.85);color:#aaa;font-size:11px;padding:6px 10px;border-radius:6px;font-family:monospace;max-width:480px;word-break:break-all';
+    badge.textContent = results.join(' | ');
+    document.body.appendChild(badge);
+    setTimeout(() => badge.remove(), 30000);
+}
+
 loadWeather();
 loadAll();
+netDiag();
 
 setInterval(loadWeather, CFG.weatherRefreshMs);
 setInterval(loadAll, CFG.newsRefreshMs);
