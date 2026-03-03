@@ -76,6 +76,14 @@
         #logo { display: flex; align-items: center; justify-content: center; }
         #logo img { height: 62px; width: auto; }
 
+        #header-center { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        #room-name {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 28px; font-weight: 700; letter-spacing: 6px; text-transform: uppercase;
+            color: var(--text);
+            text-shadow: 0 0 20px rgba(255,172,77,.4);
+        }
+
         #live-badge {
             display: flex; align-items: center; gap: 9px;
             background: rgba(255,172,77,.12); border: 1px solid rgba(255,172,77,.35);
@@ -256,9 +264,12 @@
     <div id="logo">
         <img src="isart-logo.svg" alt="ISART Digital">
     </div>
-    <div id="live-badge">
-        <div id="live-dot"></div>
-        EN DIRECT
+    <div id="header-center">
+        <div id="room-name">Salle Staff</div>
+        <div id="live-badge">
+            <div id="live-dot"></div>
+            EN DIRECT
+        </div>
     </div>
     <div id="datetime">
         <div id="clock">--:--:--</div>
