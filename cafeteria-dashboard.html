@@ -109,6 +109,40 @@
             height: calc(1080px - var(--header-h) - var(--ticker-h));
         }
 
+        /* ─── PANNEAU AGENDA ─── */
+        #calendar-panel {
+            width: 340px;
+            flex-shrink: 0;
+            background: linear-gradient(175deg, #2a3560 0%, #1e2845 60%, #181f3a 100%);
+            border-left: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            padding: 18px 16px 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        #calendar-panel::before {
+            content: '';
+            position: absolute; bottom: -60px; left: -60px;
+            width: 220px; height: 220px;
+            background: radial-gradient(circle, rgba(255,172,77,.1) 0%, transparent 70%);
+            border-radius: 50%; pointer-events: none;
+        }
+        #cal-header { font-size: 11px; color: var(--orange-lite); text-transform: uppercase; letter-spacing: 3px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        #cal-events { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 8px; }
+        .cal-event {
+            padding: 9px 12px;
+            border-left: 3px solid var(--cyan);
+            background: rgba(21,178,204,.07);
+            border-radius: 0 8px 8px 0;
+            flex-shrink: 0;
+        }
+        .cal-event.today { border-left-color: var(--orange); background: rgba(255,172,77,.1); }
+        .cal-event.today .cal-event-date { color: var(--orange); }
+        .cal-event-date { font-size: 11px; color: var(--cyan); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+        .cal-event-title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
+        .cal-event-time { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+        #cal-empty { color: var(--text-dim); font-size: 14px; text-align: center; padding-top: 30px; }
+
         /* ─── PANNEAU MÉTÉO ─── */
         #weather-panel {
             width: var(--weather-w);
@@ -304,6 +338,13 @@
         </div>
 
     </div>
+
+    <!-- AGENDA -->
+    <div id="calendar-panel">
+        <div id="cal-header">📅 Agenda ISART</div>
+        <div id="cal-events"><div class="spinner"></div></div>
+    </div>
+
 </div>
 
 <!-- ═══ BANDEAU DÉFILANT ═══ -->
@@ -340,6 +381,8 @@ const CFG = {
     rotationMs: 9000,
     weatherRefreshMs: 10 * 60000,
     newsRefreshMs: 15 * 60000,
+    calendarRefreshMs: 60 * 60000,
+    calendarIcsUrl: 'https://calendar.google.com/calendar/ical/isartdigital.com_82ks9upq5jf8iidfo1la7ovom8%40group.calendar.google.com/public/basic.ics',
 
     // Reddit uniquement comme dernier recours
     quebecSubreddits: ['Quebec', 'montreal'],
@@ -721,6 +764,73 @@ function updateTicker(actu) {
 }
 
 // ══════════════════════════════════════════════════════════════
+//  AGENDA  (Google Calendar iCal via proxy)
+// ══════════════════════════════════════════════════════════════
+function parseICSDate(str) {
+    // YYYYMMDD ou YYYYMMDDTHHmmssZ
+    const s = str.replace(/[TZ]/g, '');
+    if (s.length < 8) return null;
+    const y = s.slice(0,4), mo = s.slice(4,6), d = s.slice(6,8);
+    const h = s.slice(8,10)||'00', mi = s.slice(10,12)||'00';
+    return new Date(`${y}-${mo}-${d}T${h}:${mi}:00`);
+}
+
+function parseICS(ics) {
+    const events = [];
+    const blocks = ics.split('BEGIN:VEVENT');
+    for (let i = 1; i < blocks.length; i++) {
+        const b = blocks[i];
+        const get = k => { const m = b.match(new RegExp(k + '[^:]*:([^\r\n]+')); return m ? m[1].trim() : ''; };
+        const summary = get('SUMMARY');
+        const dtstart = get('DTSTART');
+        if (!summary || !dtstart) continue;
+        const allDay = !dtstart.includes('T');
+        const start = parseICSDate(dtstart);
+        if (!start) continue;
+        events.push({ summary, start, allDay });
+    }
+    const now = new Date(); now.setHours(0,0,0,0);
+    const limit = new Date(now); limit.setDate(limit.getDate() + 30);
+    return events
+        .filter(e => e.start >= now && e.start <= limit)
+        .sort((a,b) => a.start - b.start)
+        .slice(0, 12);
+}
+
+function renderCalendar(events) {
+    const el = document.getElementById('cal-events');
+    if (!events.length) {
+        el.innerHTML = '<div id="cal-empty">Aucun événement à venir</div>';
+        return;
+    }
+    const today = new Date(); today.setHours(0,0,0,0);
+    const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
+    el.innerHTML = events.map(ev => {
+        const isToday = ev.start >= today && ev.start < tomorrow;
+        const dateStr = isToday ? "Aujourd'hui"
+            : ev.start.toLocaleDateString('fr-CA', { weekday:'short', day:'numeric', month:'short' });
+        const timeStr = ev.allDay ? 'Toute la journée'
+            : ev.start.toLocaleTimeString('fr-CA', { hour:'2-digit', minute:'2-digit' });
+        return `<div class="cal-event${isToday?' today':''}">
+            <div class="cal-event-date">${dateStr}</div>
+            <div class="cal-event-title">${ev.summary}</div>
+            <div class="cal-event-time">${timeStr}</div>
+        </div>`;
+    }).join('');
+}
+
+async function loadCalendar() {
+    try {
+        const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(CFG.calendarIcsUrl)}`;
+        const r = await fetch(proxy, { signal: sig(15000) });
+        const d = await r.json();
+        renderCalendar(parseICS(d.contents || ''));
+    } catch {
+        document.getElementById('cal-events').innerHTML = '<div id="cal-empty">Calendrier indisponible</div>';
+    }
+}
+
+// ══════════════════════════════════════════════════════════════
 //  CHARGEMENT PRINCIPAL
 // ══════════════════════════════════════════════════════════════
 let timerActu = null;
@@ -737,9 +847,11 @@ async function loadAll() {
 
 loadWeather();
 loadAll();
+loadCalendar();
 
 setInterval(loadWeather, CFG.weatherRefreshMs);
 setInterval(loadAll, CFG.newsRefreshMs);
+setInterval(loadCalendar, CFG.calendarRefreshMs);
 </script>
 
 </body>
